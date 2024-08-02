@@ -123,6 +123,7 @@
         let numCards = 10;
         let timer;
         let timeLeft = 10;
+        let voices = [];
 
         const wordElement = document.getElementById('word');
         const scoreElement = document.getElementById('score');
@@ -140,10 +141,16 @@
         const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
         recognition.lang = 'es-ES';
 
+        function loadVoices() {
+            voices = window.speechSynthesis.getVoices();
+        }
+
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+
         function speak(text, lang = 'en-US') {
             const utterance = new SpeechSynthesisUtterance(text);
-            const voices = window.speechSynthesis.getVoices();
-            utterance.voice = voices.find(voice => voice.name === 'Google UK English Male') || voices[0];
+            const voice = voices.find(voice => voice.lang === lang);
+            utterance.voice = voice || voices[0];
             utterance.lang = lang;
             window.speechSynthesis.speak(utterance);
         }
@@ -157,7 +164,7 @@
             if (selectedWords.length > 0) {
                 currentWord = selectedWords.shift();
                 wordElement.textContent = currentWord.english;
-                speak(currentWord.english);
+                speak(currentWord.english, 'en-US');
                 attempt = 0;
                 timeLeft = 10;
                 timerElement.textContent = `Time left: ${timeLeft}`;
@@ -254,11 +261,13 @@
 
         sayAgainButton.addEventListener('click', () => {
             if (wordElement.textContent === currentWord.english) {
-                speak(currentWord.english);
+                speak(currentWord.english, 'en-US');
             } else {
                 speak(currentWord.spanish, 'es-ES');
             }
         });
+
+        loadVoices(); // Load voices initially
     </script>
 </body>
 </html>
