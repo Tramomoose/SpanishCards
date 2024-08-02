@@ -4,14 +4,77 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flashcard Program</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+        #container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+        #flashcard {
+            border: 2px solid #000;
+            padding: 50px;
+            text-align: center;
+            width: 80%;
+            height: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #word {
+            font-size: 3em;
+        }
+        #controls {
+            margin-top: 20px;
+        }
+        #controls button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 1em;
+        }
+        #initial-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #initial-screen input {
+            margin-top: 10px;
+            padding: 5px;
+            font-size: 1em;
+        }
+        #initial-screen button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+        }
+    </style>
 </head>
 <body>
-    <h1>Flashcard Program</h1>
-    <div id="flashcard">
-        <p id="word"></p>
+    <div id="initial-screen">
+        <h1>Flashcard Program</h1>
+        <label for="num-cards">Number of cards to review:</label>
+        <input type="number" id="num-cards" min="1" max="20" value="10">
+        <button id="start">Start</button>
     </div>
-    <button id="start">Start</button>
-    <p id="score">Score: 0</p>
+    <div id="container">
+        <div id="flashcard">
+            <p id="word"></p>
+        </div>
+        <div id="controls">
+            <button id="skip">Skip</button>
+        </div>
+        <p id="score">Score: 0</p>
+    </div>
 
     <script>
         const words = [
@@ -24,10 +87,16 @@
         let currentWord = null;
         let attempt = 0;
         let score = 0;
+        let selectedWords = [];
+        let numCards = 10;
 
         const wordElement = document.getElementById('word');
         const scoreElement = document.getElementById('score');
         const startButton = document.getElementById('start');
+        const skipButton = document.getElementById('skip');
+        const container = document.getElementById('container');
+        const initialScreen = document.getElementById('initial-screen');
+        const numCardsInput = document.getElementById('num-cards');
 
         const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
         recognition.lang = 'es-ES';
@@ -42,8 +111,8 @@
         }
 
         function showNextWord() {
-            if (words.length > 0) {
-                currentWord = words.shift();
+            if (selectedWords.length > 0) {
+                currentWord = selectedWords.shift();
                 wordElement.textContent = currentWord.english;
                 speak(currentWord.english);
                 attempt = 0;
@@ -83,6 +152,14 @@
         };
 
         startButton.addEventListener('click', () => {
+            numCards = parseInt(numCardsInput.value);
+            selectedWords = words.slice(0, numCards);
+            initialScreen.style.display = 'none';
+            container.style.display = 'flex';
+            showNextWord();
+        });
+
+        skipButton.addEventListener('click', () => {
             showNextWord();
         });
     </script>
