@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcard Program</title>
+</head>
+<body>
+    <h1>Flashcard Program</h1>
+    <div id="flashcard">
+        <p id="word"></p>
+    </div>
+    <button id="start">Start</button>
+    <p id="score">Score: 0</p>
+
+    <script>
+        const words = [
+            { english: 'Apple', spanish: 'Manzana' },
+            { english: 'Book', spanish: 'Libro' },
+            { english: 'Cat', spanish: 'Gato' },
+            // Add more words here
+        ];
+
+        let currentWord = null;
+        let attempt = 0;
+        let score = 0;
+
+        const wordElement = document.getElementById('word');
+        const scoreElement = document.getElementById('score');
+        const startButton = document.getElementById('start');
+
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'es-ES';
+
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function startRecognition() {
+            recognition.start();
+        }
+
+        function showNextWord() {
+            if (words.length > 0) {
+                currentWord = words.shift();
+                wordElement.textContent = currentWord.english;
+                speak(currentWord.english);
+                attempt = 0;
+                startRecognition();
+            } else {
+                wordElement.textContent = 'No more words!';
+                speak('No more words!');
+            }
+        }
+
+        recognition.onresult = (event) => {
+            const result = event.results[0][0].transcript.toLowerCase();
+            const correctAnswer = currentWord.spanish.toLowerCase();
+
+            if (result === correctAnswer) {
+                if (attempt === 0) {
+                    score += 10;
+                } else {
+                    score += 5;
+                }
+                scoreElement.textContent = `Score: ${score}`;
+                showNextWord();
+            } else {
+                attempt++;
+                if (attempt < 2) {
+                    speak('Try again');
+                    startRecognition();
+                } else {
+                    showNextWord();
+                }
+            }
+        };
+
+        recognition.onerror = (event) => {
+            console.error(event.error);
+            showNextWord();
+        };
+
+        startButton.addEventListener('click', () => {
+            showNextWord();
+        });
+    </script>
+</body>
+</html>
