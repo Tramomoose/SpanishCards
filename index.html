@@ -68,13 +68,11 @@
         ];
 
         let currentWordIndex = 0;
-        let showingEnglish = true;
         let recognition;
         let timer;
 
         function startGame() {
             currentWordIndex = 0;
-            showingEnglish = true;
             shuffle(vocabList);
             showWord();
         }
@@ -88,11 +86,11 @@
 
         function showWord() {
             const flashcard = document.getElementById('flashcard');
-            const word = showingEnglish ? vocabList[currentWordIndex].english : vocabList[currentWordIndex].spanish;
+            const word = vocabList[currentWordIndex].english;
             flashcard.textContent = word;
             flashcard.style.backgroundColor = '#fff';
             flashcard.style.color = '#000';
-            speakWord(word, showingEnglish ? 'en-US' : 'es-ES');
+            speakWord(word, 'en-US');
 
             clearTimeout(timer);
             timer = setTimeout(() => {
@@ -103,19 +101,21 @@
         }
 
         function flipCard() {
-            showingEnglish = !showingEnglish;
-            showWord();
+            const flashcard = document.getElementById('flashcard');
+            const word = vocabList[currentWordIndex].spanish;
+            flashcard.textContent = word;
+            flashcard.style.backgroundColor = '#000';
+            flashcard.style.color = '#fff';
+            speakWord(word, 'es-ES');
         }
 
         function skipCard() {
             currentWordIndex = (currentWordIndex + 1) % vocabList.length;
-            showingEnglish = true;
             showWord();
         }
 
         function restartGame() {
             currentWordIndex = 0;
-            showingEnglish = true;
             shuffle(vocabList);
             showWord();
         }
@@ -136,23 +136,15 @@
                 recognition.onresult = (event) => {
                     const result = event.results[0][0].transcript.toLowerCase();
                     const correctWord = vocabList[currentWordIndex].spanish.toLowerCase();
-                    if (showingEnglish && result === correctWord) {
-                        setFlashcardColor('#0f0'); // Green for correct
+                    if (result === correctWord) {
+                        setFlashcardColor('#0f0', correctWord); // Green for correct
                     } else {
-                        setFlashcardColor('#f00'); // Red for incorrect
+                        setFlashcardColor('#f00', correctWord); // Red for incorrect
                     }
-                    setTimeout(() => {
-                        skipCard();
-                    }, 5000);
                 };
 
                 recognition.onend = () => {
-                    if (flashcard.style.backgroundColor !== 'rgb(15, 15, 15)') {
-                        setFlashcardColor('#f00'); // Red for no response
-                        setTimeout(() => {
-                            skipCard();
-                        }, 5000);
-                    }
+                    setFlashcardColor('#f00', vocabList[currentWordIndex].spanish); // Red for no response
                 };
             }
 
@@ -160,10 +152,14 @@
             setTimeout(() => recognition.stop(), 5000);
         }
 
-        function setFlashcardColor(color) {
+        function setFlashcardColor(color, text) {
             const flashcard = document.getElementById('flashcard');
             flashcard.style.backgroundColor = color;
-            flashcard.style.color = color === '#f00' ? '#fff' : '#000';
+            flashcard.style.color = '#fff';
+            flashcard.textContent = text;
+            setTimeout(() => {
+                skipCard();
+            }, 3000);
         }
     </script>
 </body>
