@@ -137,14 +137,16 @@
                     const result = event.results[0][0].transcript.toLowerCase();
                     const correctWord = vocabList[currentWordIndex].spanish.toLowerCase();
                     if (result === correctWord) {
-                        setFlashcardColor('#0f0', correctWord); // Green for correct
+                        setFlashcardColor('#0f0'); // Green for correct
                     } else {
-                        setFlashcardColor('#f00', correctWord); // Red for incorrect
+                        setFlashcardColor('#f00'); // Red for incorrect
                     }
                 };
 
                 recognition.onend = () => {
-                    setFlashcardColor('#f00', vocabList[currentWordIndex].spanish); // Red for no response
+                    if (document.getElementById('flashcard').style.backgroundColor !== 'rgb(15, 255, 15)') {
+                        setFlashcardColor('#f00'); // Red for no response
+                    }
                 };
             }
 
@@ -152,11 +154,11 @@
             setTimeout(() => recognition.stop(), 5000);
         }
 
-        function setFlashcardColor(color, text) {
+        function setFlashcardColor(color) {
             const flashcard = document.getElementById('flashcard');
             flashcard.style.backgroundColor = color;
             flashcard.style.color = '#fff';
-            flashcard.textContent = text;
+            flashcard.textContent = vocabList[currentWordIndex].spanish;
             setTimeout(() => {
                 skipCard();
             }, 3000);
