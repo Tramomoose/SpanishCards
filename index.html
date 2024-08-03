@@ -3,271 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flashcard Program</title>
+    <title>Spanish Flashcard Game</title>
     <style>
-        body, html {
-            height: 100%;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        body {
             font-family: Arial, sans-serif;
-        }
-        #container {
-            display: none;
+            display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 100%;
-            height: 100%;
+            height: 100vh;
+            background-color: #f5f5f5;
         }
-        #flashcard {
+        .flashcard {
+            width: 300px;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border: 2px solid #000;
-            padding: 50px;
-            text-align: center;
-            width: 80%;
-            height: 50%;
+            border-radius: 10px;
+            background-color: #fff;
+            color: #000;
+            font-size: 2em;
+            margin-bottom: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .controls {
             display: flex;
-            justify-content: center;
-            align-items: center;
+            gap: 10px;
         }
-        #word {
-            font-size: 3em;
-        }
-        #controls {
-            margin-top: 20px;
-        }
-        #controls button {
-            margin: 5px;
-            padding: 10px 20px;
-            font-size: 1em;
-        }
-        #initial-screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        #initial-screen input {
-            margin-top: 10px;
-            padding: 5px;
-            font-size: 1em;
-        }
-        #initial-screen button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 1em;
-        }
-        #leaderboard {
-            margin-top: 20px;
-        }
-        #leaderboard table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        #leaderboard th, #leaderboard td {
-            border: 1px solid #000;
+        button {
             padding: 10px;
-            text-align: center;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:active {
+            transform: scale(0.98);
         }
     </style>
 </head>
 <body>
-    <div id="initial-screen">
-        <h1>Flashcard Program</h1>
-        <label for="num-cards">Number of cards to review:</label>
-        <input type="number" id="num-cards" min="1" max="20" value="10">
-        <button id="start">Start</button>
-    </div>
-    <div id="container">
-        <div id="flashcard">
-            <p id="word"></p>
-        </div>
-        <div id="controls">
-            <button id="flip">Flip</button>
-            <button id="skip">Skip</button>
-            <button id="say-again">Say Again</button>
-        </div>
-        <p id="score">Score: 0</p>
-        <p id="timer">Time left: 10</p>
-    </div>
-    <div id="leaderboard" style="display:none;">
-        <h2>Leaderboard</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Date</th>
-                    <th>Cards Reviewed</th>
-                    <th>Percentage Correct</th>
-                    <th>Total Points</th>
-                </tr>
-            </thead>
-            <tbody id="leaderboard-body">
-                <!-- Leaderboard entries will go here -->
-            </tbody>
-        </table>
+    <div class="flashcard" id="flashcard">Click 'Start' to begin</div>
+    <div class="controls">
+        <button onclick="startGame()">Start</button>
+        <button onclick="flipCard()">Flip</button>
+        <button onclick="skipCard()">Skip</button>
+        <button onclick="restartGame()">Restart</button>
     </div>
 
     <script>
-        const words = [
-            { english: 'Apple', spanish: 'Manzana' },
-            { english: 'Book', spanish: 'Libro' },
-            { english: 'Cat', spanish: 'Gato' },
-            // Add more words here
+        const vocabList = [
+            { english: 'Hello', spanish: 'Hola' },
+            { english: 'Goodbye', spanish: 'Adiós' },
+            { english: 'Please', spanish: 'Por favor' },
+            { english: 'Thank you', spanish: 'Gracias' },
+            { english: 'Yes', spanish: 'Sí' },
+            { english: 'No', spanish: 'No' },
+            { english: 'Water', spanish: 'Agua' },
+            { english: 'Food', spanish: 'Comida' },
+            { english: 'Friend', spanish: 'Amigo' },
+            { english: 'Family', spanish: 'Familia' }
         ];
 
-        let currentWord = null;
-        let attempt = 0;
-        let score = 0;
-        let selectedWords = [];
-        let numCards = 10;
-        let timer;
-        let timeLeft = 10;
-        let voices = [];
+        let currentWordIndex = 0;
+        let showingEnglish = true;
+        let recognition;
 
-        const wordElement = document.getElementById('word');
-        const scoreElement = document.getElementById('score');
-        const timerElement = document.getElementById('timer');
-        const startButton = document.getElementById('start');
-        const skipButton = document.getElementById('skip');
-        const flipButton = document.getElementById('flip');
-        const sayAgainButton = document.getElementById('say-again');
-        const container = document.getElementById('container');
-        const initialScreen = document.getElementById('initial-screen');
-        const numCardsInput = document.getElementById('num-cards');
-        const leaderboard = document.getElementById('leaderboard');
-        const leaderboardBody = document.getElementById('leaderboard-body');
-
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = 'es-ES';
-
-        function loadVoices() {
-            voices = window.speechSynthesis.getVoices();
+        function startGame() {
+            currentWordIndex = 0;
+            showingEnglish = true;
+            showWord();
+            startRecognition();
         }
 
-        window.speechSynthesis.onvoiceschanged = loadVoices;
+        function showWord() {
+            const flashcard = document.getElementById('flashcard');
+            const word = showingEnglish ? vocabList[currentWordIndex].english : vocabList[currentWordIndex].spanish;
+            flashcard.textContent = word;
+            flashcard.style.backgroundColor = '#fff';
+            flashcard.style.color = '#000';
+            speakWord(word, showingEnglish ? 'en-US' : 'es-ES');
+        }
 
-        function speak(text, lang = 'en-US') {
-            const utterance = new SpeechSynthesisUtterance(text);
-            const voice = voices.find(voice => voice.lang === lang);
-            utterance.voice = voice || voices[0];
+        function flipCard() {
+            showingEnglish = !showingEnglish;
+            showWord();
+        }
+
+        function skipCard() {
+            currentWordIndex = (currentWordIndex + 1) % vocabList.length;
+            showingEnglish = true;
+            showWord();
+        }
+
+        function restartGame() {
+            currentWordIndex = 0;
+            showingEnglish = true;
+            showWord();
+        }
+
+        function speakWord(word, lang) {
+            const utterance = new SpeechSynthesisUtterance(word);
             utterance.lang = lang;
-            window.speechSynthesis.speak(utterance);
+            speechSynthesis.speak(utterance);
         }
 
         function startRecognition() {
+            recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'es-ES';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onresult = (event) => {
+                const result = event.results[0][0].transcript.toLowerCase();
+                const correctWord = vocabList[currentWordIndex].spanish.toLowerCase();
+                if (result === correctWord) {
+                    setFlashcardColor('#0f0'); // Green for correct
+                } else {
+                    setFlashcardColor('#f00'); // Red for incorrect
+                }
+                setTimeout(() => {
+                    skipCard();
+                    startRecognition();
+                }, 2000);
+            };
+
             recognition.start();
         }
 
-        function showNextWord() {
-            clearInterval(timer);
-            if (selectedWords.length > 0) {
-                currentWord = selectedWords.shift();
-                wordElement.textContent = currentWord.english;
-                speak(currentWord.english, 'en-US');
-                attempt = 0;
-                timeLeft = 10;
-                timerElement.textContent = `Time left: ${timeLeft}`;
-                startTimer();
-                startRecognition();
-            } else {
-                wordElement.textContent = 'No more words!';
-                speak('No more words!');
-                setTimeout(endSession, 2000);
-            }
+        function setFlashcardColor(color) {
+            const flashcard = document.getElementById('flashcard');
+            flashcard.style.backgroundColor = color;
+            flashcard.style.color = '#fff';
         }
-
-        function startTimer() {
-            timer = setInterval(() => {
-                timeLeft--;
-                timerElement.textContent = `Time left: ${timeLeft}`;
-                if (timeLeft <= 0) {
-                    clearInterval(timer);
-                    showNextWord();
-                }
-            }, 1000);
-        }
-
-        function endSession() {
-            container.style.display = 'none';
-            leaderboard.style.display = 'block';
-            let name = prompt('Please enter your name:');
-            if (!name) name = 'Anonymous';
-            const date = new Date().toLocaleDateString();
-            const percentageCorrect = ((score / (numCards * 10)) * 100).toFixed(2);
-            const newEntry = `<tr>
-                <td>${name}</td>
-                <td>${date}</td>
-                <td>${numCards}</td>
-                <td>${percentageCorrect}%</td>
-                <td>${score}</td>
-            </tr>`;
-            leaderboardBody.innerHTML += newEntry;
-            // Sort the leaderboard by score
-            const rows = Array.from(leaderboardBody.querySelectorAll('tr'));
-            rows.sort((a, b) => {
-                const scoreA = parseInt(a.cells[4].textContent);
-                const scoreB = parseInt(b.cells[4].textContent);
-                return scoreB - scoreA;
-            });
-            leaderboardBody.innerHTML = rows.slice(0, 10).map(row => row.outerHTML).join('');
-        }
-
-        recognition.onresult = (event) => {
-            const result = event.results[0][0].transcript.toLowerCase();
-            const correctAnswer = currentWord.spanish.toLowerCase();
-
-            if (result === correctAnswer) {
-                if (attempt === 0) {
-                    score += 10;
-                } else {
-                    score += 5;
-                }
-                scoreElement.textContent = `Score: ${score}`;
-                showNextWord();
-            } else {
-                attempt++;
-                if (attempt < 2) {
-                    speak('Try again');
-                    startRecognition();
-                } else {
-                    showNextWord();
-                }
-            }
-        };
-
-        recognition.onerror = (event) => {
-            console.error(event.error);
-            showNextWord();
-        };
-
-        startButton.addEventListener('click', () => {
-            numCards = parseInt(numCardsInput.value);
-            selectedWords = words.slice(0, numCards);
-            initialScreen.style.display = 'none';
-            container.style.display = 'flex';
-            showNextWord();
-        });
-
-        skipButton.addEventListener('click', () => {
-            showNextWord();
-        });
-
-        flipButton.addEventListener('click', () => {
-            wordElement.textContent = currentWord.spanish;
-            speak(currentWord.spanish, 'es-ES');
-            clearInterval(timer);
-        });
-
-        sayAgainButton.addEventListener('click', () => {
-            if (wordElement.textContent === currentWord.english) {
-                speak(currentWord.english, 'en-US');
-            } else {
-                speak(currentWord.spanish, 'es-ES');
-            }
-        });
-
-        loadVoices(); // Load voices initially
     </script>
 </body>
 </html>
