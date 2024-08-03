@@ -70,6 +70,7 @@
         let currentWordIndex = 0;
         let showingEnglish = true;
         let recognition;
+        let timer;
 
         function startGame() {
             currentWordIndex = 0;
@@ -85,6 +86,12 @@
             flashcard.style.backgroundColor = '#fff';
             flashcard.style.color = '#000';
             speakWord(word, showingEnglish ? 'en-US' : 'es-ES');
+
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                flipCard();
+                startRecognition();
+            }, 5000);
         }
 
         function flipCard() {
@@ -121,13 +128,18 @@
                 const correctWord = vocabList[currentWordIndex].spanish.toLowerCase();
                 if (result === correctWord) {
                     setFlashcardColor('#0f0'); // Green for correct
+                    clearTimeout(timer);
+                    setTimeout(() => {
+                        skipCard();
+                        startRecognition();
+                    }, 2000);
                 } else {
                     setFlashcardColor('#f00'); // Red for incorrect
+                    setTimeout(() => {
+                        flipCard();
+                        startRecognition();
+                    }, 2000);
                 }
-                setTimeout(() => {
-                    skipCard();
-                    startRecognition();
-                }, 2000);
             };
 
             recognition.start();
